@@ -1,0 +1,106 @@
+
+use FoodInspections
+
+db.conversaciones.insertMany([
+  {
+    "Inspector": "Inspector A",
+    "NombreEst": "Candela Express",
+    "Resultado": "Pasa",
+    "Violacion": null
+  },
+  {
+    "Inspector": "Inspector B",
+    "NombreEst": "Los Corales",
+    "Resultado": "Falla",
+    "Violacion": "Falta de Higiene"
+  },
+  {
+    "Inspector": "Inspector C",
+    "NombreEst": "Parrillada El Porton",
+    "Resultado": "Pasa",
+    "Violacion": null
+  },
+  {
+    "Inspector": "Inspector D",
+    "NombreEst": "La Bodeguita",
+    "Resultado": "Falla",
+    "Violacion": "Alimentos Vencidos"
+  },
+  {
+    "Inspector": "Inspector E",
+    "NombreEst": "Mercosur",
+    "Resultado": "Falla",
+    "Violacion": "Equipamiento Inapropiado"
+  },
+  {
+    "Inspector": "Inspector F",
+    "NombreEst": "Parrillada El Porton",
+    "Resultado": "Pasa",
+    "Violacion": null
+  }
+
+]);
+
+//Consulta a
+
+
+// Consulta para contar las conversaciones sobre violaciones diferentes
+var result = db.conversaciones.aggregate([
+  // Agrupar por el campo "Violacion" y contar las ocurrencias
+  {
+    $group: {
+      _id: "$Violacion",  // Agrupar por el campo "Violacion"
+      count: { $sum: 1 }  // Contar las ocurrencias de cada valor de "Violacion"
+    }
+  },
+  // Filtrar solo los grupos que tienen un valor diferente de null
+  {
+    $match: {
+      _id: { $ne: null }  // Filtrar los documentos donde "Violacion" no es null
+    }
+  },
+  // Contar los grupos resultantes
+  {
+    $count: "totalViolaciones"  // Contar los grupos resultantes
+  }
+]);
+
+// Mostrar el resultado
+print("Número total de violaciones diferentes: " + result.next().totalViolaciones);
+
+
+
+//Consulta b
+
+var establecimientosAprobados = db.conversaciones.aggregate([
+  { $match: { Resultado: "Pasa" } },
+  { $group: { _id: "$NombreEst", count: { $sum: 1 } } },
+  { $sort: { count: -1 } }
+]).toArray();
+
+print("Establecimientos con más inspecciones aprobadas:");
+establecimientosAprobados.forEach(est => {
+  print(est._id + ": " + est.count + " inspecciones aprobadas");
+});
+
+
+
+//Consulta C
+
+db.conversaciones.updateMany(
+  { Resultado: "Falla" },
+  { $set: { Etiqueta: "IMPORTANTE" } }
+);
+
+print("Se ha agregado la etiqueta 'IMPORTANTE' a todas las conversaciones con resultados Falla.");
+
+
+
+//Mostrar todas las tablas
+
+var todasLasConversaciones = db.conversaciones.find().toArray();
+
+print("Todas las conversaciones:");
+todasLasConversaciones.forEach(conversacion => {
+  printjson(conversacion);
+});
